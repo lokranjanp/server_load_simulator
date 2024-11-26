@@ -46,7 +46,7 @@ def create_connection():
     Returns:
         mysql.connector.connection.MySQLConnection: The database connection object if successful, None otherwise.
     """
-    path = "../.env"
+    path = ".env"
     try:
         connection = mysql.connector.connect(
             host=dotenv.get_key(path, 'DB_HOST'),
