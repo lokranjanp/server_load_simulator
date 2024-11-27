@@ -34,12 +34,12 @@ def create_random_email():
     Returns:
         str: A valid email address.
     """
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=random.randint(5, 10)))
+    username = f"testmail{random.randint(1, 100000)}"
     domain = random.choice(["gmail.com", "yahoo.com", "outlook.com", "protonmail.com", "example.com"])
     return f"{username}@{domain}"
 
 iter = 0
-while iter < 10000:
+while iter < 10:
     print(create_random_email())
     iter += 1
 
