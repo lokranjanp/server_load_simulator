@@ -47,12 +47,3 @@ def random_data_gen(feederstring):
     hashpassword, usersalt = hash_password(username)
     domain = random.choice(["gmail.com", "yahoo.com", "outlook.com", "protonmail.com", "example.com"])
     return username, f"{username}@{domain}", hashpassword, usersalt
-
-
-start_time = time.time()
-numrows = int(input("Number of rows to be inserted : "))
-if data_inserter(numrows):
-    print("Rows inserted successfully : ",numrows)
-end_time = time.time()
-
-print(end_time - start_time)

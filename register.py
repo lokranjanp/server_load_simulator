@@ -97,7 +97,7 @@ def register_user(username, email, password):
         cursor.close()
         connection.close()
 
-def validate_user(username, password):
+def validate_user(connection, username, password):
     """
     Validates a user by checking their username and password without 2FA.
 
@@ -108,7 +108,6 @@ def validate_user(username, password):
     Returns:
         bool: True if validation is successful, False otherwise.
     """
-    connection = create_connection()
     if connection is None:
         return False
 
