@@ -28,10 +28,10 @@ def send_mail(recipient_email, otp):
     server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
 
     # Create the email message
-    message = MIMEText(f"Your OTP for 2FA login @lokranjan authentication gateway is {otp}.\n"
+    message = MIMEText(f"Your OTP for 2FA login @MAAL authentication gateway is {otp}.\n"
                        f"Please do not share this OTP with anyone.\n"
                        f"Keep visiting us\n"
-                       f"Regards,\nLokranjan")
+                       f"Regards,\nTeam MAAL🗿💀")
     message["Subject"] = "OTP for 2FA Login"
     message["From"] = EMAIL_ADDRESS
     message["To"] = recipient_email

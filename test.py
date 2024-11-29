@@ -1,7 +1,6 @@
 from otp import *
 from otpmail import *
 from register import *
-from sessions import *
 
 path = ".env"
 r = redis.StrictRedis(host=dotenv.get_key(path, "REDIS_HOST"),
@@ -9,5 +8,8 @@ r = redis.StrictRedis(host=dotenv.get_key(path, "REDIS_HOST"),
                       db=dotenv.get_key(path, "REDIS_DB"))
 
 genotp = generate_otp("Loki")
+username_input = input("Enter username : ")
 print(genotp)
-print(cache_otp(r, "pookie", genotp))
+cache_otp(r, username_input, genotp)
+user_otp_input = str(input("Enter OTP : "))
+print(validate_user_2FA(username_input, user_otp_input))

@@ -4,7 +4,8 @@ import redis
 from data import data_inserter
 from otp import generate_otp
 from otpmail import send_mail
-from data import create_connection, cache_otp, validate_user
+from data import create_connection, cache_otp
+import bcrypt
 
 app = Flask(__name__)
 
@@ -46,12 +47,12 @@ def serveotp():
 @app.route("/register", methods=['POST'])
 def register():
     try:
-        # Assuming data_inserter handles registration logic
-        data = request.json  # Extract the registration data from the request
-        if not data:
-            return jsonify({"error": "Invalid data"}), 400
+        # # Assuming data_inserter handles registration logic
+        # data = request.json  # Extract the registration data from the request
+        # if not data:
+        #     return jsonify({"error": "Invalid data"}), 400
 
-        data_inserter(data)  # Pass the registration data to your function
+        data_inserter(1)  # Pass the registration data to your function
         return jsonify({"message": "User registered successfully"}), 201
 
     except Exception as e:
@@ -69,16 +70,31 @@ def login():
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
 
-        # Validate the user
-        is_valid = validate_user(dbconnect, username, password)
-        if is_valid:
-            return jsonify({"message": "Login successful"}), 200
-        else:
-            return jsonify({"error": "Invalid username or password"}), 401
+        if dbconnect is None:
+            return False
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            return jsonify({"error": str(e)}), 300
+
+    try:
+        cursor.execute("SELECT u.password_hash, u.user_salt FROM users u WHERE u.username = %s", (username,))
+        user = cursor.fetchone()
+
+        if user:
+            usersalt, stored_hash = user # Extract usersalt and stored hash
+            stored_hash = stored_hash.encode('utf-8') if isinstance(stored_hash, str) else stored_hash
+            print(usersalt)
+            print(stored_hash)
+            if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
+                print("Login successful!")
+            else:
+                print("Invalid username or password.")
+        else:
+            print("User does not exist.")
+
+    except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=7019, debug=True)
+    app.run(host='0.0.0.0', port=7019, debug=True, ssl_context=('cert.pem', 'key.pem'))
