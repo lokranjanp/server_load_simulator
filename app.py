@@ -1,18 +1,19 @@
 from flask import Flask, request, jsonify
-import mysql.connector
 import redis
 from data import data_inserter
 from otp import generate_otp
 from otpmail import send_mail
 from data import create_connection, cache_otp
 import bcrypt
+import dotenv
 
+path = ".env"
 app = Flask(__name__)
 
 # Database and Redis setup
 dbconnect = create_connection()
 cursor = dbconnect.cursor()
-r = redis.StrictRedis(host='localhost', port=6379, db=7)
+r = redis.StrictRedis(host='localhost', port=dotenv.get_key(path, 'REDIS_PORT'), db=7)
 
 @app.route("/otp", methods=['POST'])
 def serveotp():
