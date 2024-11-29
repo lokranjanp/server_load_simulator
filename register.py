@@ -21,24 +21,6 @@ def hash_password(password):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), user_salt)
     return hashed_password, user_salt
 
-def authenticate_user(stored_hash, input_password):
-    """
-    Authenticates a user by comparing the stored hash with the input password.
-
-    Args:
-        stored_hash (str): The hashed password stored in the database.
-        input_password (str): The plain text password input by the user.
-
-    Returns:
-        bool: True if authentication is successful, False otherwise.
-    """
-    if bcrypt.checkpw(input_password.encode('utf-8'), stored_hash.encode('utf-8')):
-        print("Authentication successful")
-        return True
-    else:
-        print("Authentication failed. Incorrect password.")
-        return False
-
 def create_connection():
     """
     Creates a connection to the MySQL database using credentials from a .env file.
@@ -91,37 +73,6 @@ def register_user(username, email, password):
 
     except Error as e:
         print(f"Registration Failed. Error: {e}")
-        return False
-
-    finally:
-        cursor.close()
-        connection.close()
-
-def validate_user(connection, username, password):
-    """
-    Validates a user by checking their username and password without 2FA.
-
-    Args:
-        username (str): The username of the user.
-        password (str): The plain text password of the user.
-
-    Returns:
-        bool: True if validation is successful, False otherwise.
-    """
-    if connection is None:
-        return False
-
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT u.password_hash, u.user_salt FROM users u WHERE u.username = %s", (username,))
-        user = cursor.fetchone()
-
-        if user:
-            stored_hash, stored_salt = user
-            return authenticate_user(stored_hash, password)
-
-    except Error as e:
-        print(f"Password auth failed. Error: {e}")
         return False
 
     finally:
