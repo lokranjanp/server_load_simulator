@@ -52,8 +52,9 @@ def register():
         # data = request.json  # Extract the registration data from the request
         # if not data:
         #     return jsonify({"error": "Invalid data"}), 400
-
-        data_inserter(1)  # Pass the registration data to your function
+        data = request.json
+        numrows = data.get('numrows')
+        data_inserter(numrows)  # Pass the registration data to your function
         return jsonify({"message": "User registered successfully"}), 201
 
     except Exception as e:
