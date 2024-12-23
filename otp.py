@@ -32,7 +32,7 @@ def cache_otp(r, username, otp):
         "otp": otp,
         "username": username
     }
-    r.setex(f'otp:{username}', 300, json.dumps(user_data))
+    r.setex(f'otp:{username}', 30, json.dumps(user_data))
 
 def verify_otp(r, username, input_otp):
     """
