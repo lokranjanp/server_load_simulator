@@ -17,7 +17,7 @@ while iter < 10:
     data = {"username": username_pass, "password": username_pass}
     print(data)
     start = time.time()
-    response = requests.post(url, json=data, verify='/Users/lokranjan/PycharmProjects/workloadsim/cert.pem')
+    response = requests.post(url, json=data)
     print(response)
     end = time.time()
     print(iter, end-start)

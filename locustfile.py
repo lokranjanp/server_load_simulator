@@ -19,12 +19,10 @@ class SimulateFlaskApp(HttpUser):
     def test_otpgen(self):
         random.seed(time.time())
         data = {"username": random.choice(USERNAMES)}
-        cert_path = "/Users/lokranjan/PycharmProjects/workloadsim/cert.pem"
         start_time = time.time()
         with self.client.post(
             "/otp",  # Endpoint relative to the host
             json=data,
-            verify=cert_path,
             catch_response=True
         ) as response:
             end_time = time.time()
@@ -37,13 +35,11 @@ class SimulateFlaskApp(HttpUser):
     @task(3)
     def test_login(self):
         random.seed(time.time())
-        cert_path = "/Users/lokranjan/PycharmProjects/workloadsim/cert.pem"
         self.username = random.choice(USERNAMES)
         data = {"username": self.username, "password":self.username}
         start_time = time.time()
         with self.client.post(
             "/login", json=data,
-            verify=cert_path,
             catch_response=True
         ) as response:
             end_time = time.time()
@@ -56,12 +52,10 @@ class SimulateFlaskApp(HttpUser):
     @task(1)
     def test_register(self):
         random.seed(time.time())
-        cert_path = "/Users/lokranjan/PycharmProjects/workloadsim/cert.pem"
         data = {"numrows": 1}
         start_time = time.time()
         with self.client.post(
             "/register", json=data,
-            verify=cert_path,
             catch_response=True
         ) as response:
             end_time = time.time()
