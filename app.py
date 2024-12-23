@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import redis
 from data import data_inserter
 from otp import generate_otp
-from otpmail import send_mail
+from otpmail import send_mail, initialize_pool
 from data import create_connection, cache_otp
 import bcrypt
 import dotenv
@@ -11,9 +11,11 @@ path = ".env"
 app = Flask(__name__)
 
 # Database and Redis setup
-dbconnect = create_connection()
-cursor = dbconnect.cursor()
+connection_pool = create_connection()
+connection = connection_pool.get_connection()
+cursor = connection.cursor()
 r = redis.StrictRedis(host='localhost', port=dotenv.get_key(path, 'REDIS_PORT'), db=7)
+pool = initialize_pool()
 
 @app.route("/otp", methods=['POST'])
 def serveotp():
@@ -37,7 +39,7 @@ def serveotp():
 
         # Cache the OTP in Redis and send via email
         cache_otp(r, username, user_otp)
-        send_mail(user_email, user_otp)
+        send_mail(user_email, user_otp, pool)
 
         return jsonify({"message": f"OTP sent to {user_email}"}), 200
 
@@ -72,7 +74,7 @@ def login():
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
 
-        if dbconnect is None:
+        if connection is None:
             return False
 
     except Exception as e:
@@ -85,8 +87,6 @@ def login():
         if user:
             usersalt, stored_hash = user # Extract usersalt and stored hash
             stored_hash = stored_hash.encode('utf-8') if isinstance(stored_hash, str) else stored_hash
-            print(usersalt)
-            print(stored_hash)
             if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
                 print("Login successful!")
             else:

@@ -1,7 +1,7 @@
 import dotenv
 import redis
 import mysql.connector
-from mysql.connector import *
+from mysql.connector import pooling
 from datetime import datetime
 import bcrypt
 from otp import *
@@ -30,17 +30,16 @@ def create_connection():
     """
     path = ".env"
     try:
-        connection = mysql.connector.connect(
+        connection_pool = pooling.MySQLConnectionPool(
             host=dotenv.get_key(path, 'DB_HOST'),
             user=dotenv.get_key(path, 'DB_USER'),
             password=dotenv.get_key(path, 'DB_PASSWORD'),
-            database=dotenv.get_key(path, 'DB_NAME')
+            database=dotenv.get_key(path, 'DB_NAME'),
+            pool_size=32
         )
-        if connection.is_connected():
-            print("Successfully connected to the database")
-        return connection
+        return connection_pool
 
-    except Error as e:
+    except OSError as e:
         print(f"Database Connection FAILED. Error: {e}")
         return None
 
