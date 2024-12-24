@@ -1,21 +1,22 @@
-from flask import Flask, request, jsonify
-import redis
-import random
-import pyotp
-import datetime
-import time
-from otp import generate_otp
-from otpmail import send_mail, initialize_pool
-from data import create_connection, cache_otp
-import bcrypt
+from datetime import datetime
 import dotenv
-from register import *
+from otp import *
+import pyotp
+import bcrypt
+import random
+import time
+from flask import Flask, request, jsonify
+from pymongo import MongoClient
+from otpmail import *
+import redis
 
 path = ".env"
 app = Flask(__name__)
 
 # Database and Redis setup
-connection_pool = create_connection()
+uri = dotenv.get_key(path, 'MONGO_URI')
+client = MongoClient(uri)
+db = client["authdata"]
 r = redis.StrictRedis(host='localhost', port=dotenv.get_key(path, 'REDIS_PORT'), db=7)
 pool = initialize_pool()
 
@@ -25,25 +26,26 @@ def serveotp():
         # Extracting username from the JSON body
         data = request.json
         username = data.get('username')
+        cursor = db["users"]
 
         if not username:
             return jsonify({"error": "Username is required"}), 400
 
-        connection = connection_pool.get_connection()
-        cursor = connection.cursor()
+        # Fetching user details from MongoDB
+        user = cursor.find_one({"username": username})
 
-        # Fetching user details from the database
-        cursor.execute("SELECT otp_secret, email FROM users WHERE username = %s", (username,))
-        result = cursor.fetchone()
-
-        if not result:
+        if not user:
             return jsonify({"error": "User not found"}), 404
 
-        user_secret, user_email = result
-        user_otp = generate_otp(user_secret)
+        user_otp_secret = user["otp_secret"]
+        user_email = user["email"]
 
-        # Cache the OTP in Redis and send via email
+        # Generate OTP
+        user_otp = pyotp.TOTP(user_otp_secret).now()
+        # Cache the OTP in Redis (assuming a function `cache_otp` is implemented)
         cache_otp(r, username, user_otp)
+
+        # Send the OTP via email (assuming a function `send_mail` is implemented)
         send_mail(user_email, user_otp, pool)
 
         return jsonify({"message": f"OTP sent to {user_email}"}), 200
@@ -51,107 +53,72 @@ def serveotp():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-
+def hash_password(password):
+    salt = bcrypt.gensalt()
+    hashedpw = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashedpw
 
 def random_data_gen(feederstring):
-    """
-    Generates a realistic random email using regex patterns.
-    Returns:
-        str: A valid email address.
-    """
     random.seed(time.time())
     username = feederstring + str(random.randint(1, 1000000))
-    hashpassword, usersalt = hash_password(username)
+    hashed_password = hash_password(username)
     domain = random.choice(["gmail.com", "yahoo.com", "outlook.com", "protonmail.com", "example.com"])
-    return username, f"{username}@{domain}", hashpassword, usersalt
+    return username, f"{username}@{domain}", hashed_password
 
 @app.route("/register", methods=['POST'])
 def register():
     try:
+        cursor = db["users"]
         data = request.json
-        numrows = data.get('numrows')
-        connection = connection_pool.get_connection()
-
-        if connection is None:
-            return False
+        numrows = data.get('numrows', 1)
 
         iter = 0
         while iter < numrows:
             feederstring = random.choice(["testmail", "dummymail"])
-            username, email, hashed_password, user_salt = random_data_gen(feederstring)
+            username, email, hashed_password = random_data_gen(feederstring)
 
             try:
-                cursor = connection.cursor()
-                created_at = datetime.now()
                 user_otp_secret = pyotp.random_base32()
-                cursor.execute("INSERT INTO users (username, email, password_hash, otp_secret, created_at ,user_salt) "
-                               "VALUES (%s, %s, %s, %s, %s, %s)",
-                               (username, email, hashed_password, user_otp_secret, created_at, user_salt))
-                connection.commit()
+                created_at = datetime.now()
+
+                # Create and save the user document
+                post1 = {"username": username, "email": email, "password": hashed_password,
+                         "otp_secret": user_otp_secret, "created_at": created_at}
+
+                cursor.insert_one(post1)
 
             except Exception as e:
                 print(f"Registration Failed. Error: {e}")
-                return False
+                return jsonify({"message": "Registration failed", "error": str(e)}), 500
 
             iter += 1
-        return jsonify({"message": "User registered successfully"}), 200
+        return jsonify({"message": "Users registered successfully"}), 200
 
     except Exception as e:
-        return jsonify({"Registration error": str(e)}), 500
+        return jsonify({"message": "Registration error", "error": str(e)}), 500
 
-    finally:
-        if cursor:
-            cursor.close()
-            connection.close()
-
+def verify_password(stored_hash, provided_password):
+    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
 
 @app.route("/login", methods=['POST'])
 def login():
-    try:
-        # Extracting login credentials
-        data = request.json
-        username = data.get('username')
-        password = data.get('password')
+    # Extracting login credentials
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
 
-        if not username or not password:
-            return jsonify({"error": "Username and password are required"}), 400
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
 
-        connection = connection_pool.get_connection()
+    cursor = db["users"]
+    # Fetching user details from MongoDB
+    user = cursor.find_one({"username": username})
 
-        if connection is None:
-            return False
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    except Exception as e:
-        return jsonify({"DB Connection error": str(e)}), 300
-
-    try:
-        cursor = connection.cursor()
-        cursor.execute("SELECT u.password_hash, u.user_salt FROM users u WHERE u.username = %s", (username,))
-        user = cursor.fetchone()
-
-        if user:
-            usersalt, stored_hash = user  #Extract user salt and stored hash
-            stored_hash = stored_hash.encode('utf-8') if isinstance(stored_hash, str) else stored_hash
-            if bcrypt.checkpw(password.encode('utf-8'), stored_hash):
-                print("Login successful!")
-            else:
-                return "Invalid username or password."
-        else:
-            return "User does not exist."
-
-    except Exception as e:
-        return jsonify({"DB Query error": str(e)}), 500
-
-    finally:
-        if cursor:
-            cursor.close()
-            connection.close()
-
+    if verify_password(user["password"], password):
+        return jsonify({"message": "Login successful"}), 200
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=7019)

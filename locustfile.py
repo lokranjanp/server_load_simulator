@@ -8,11 +8,11 @@ def load_usernames_from_csv(filepath):
         reader = csv.DictReader(file)
         return [row["username"] for row in reader]
 
-USERNAMES = load_usernames_from_csv("userdump.csv")
+USERNAMES = load_usernames_from_csv("usernames.csv")
 
 class SimulateFlaskApp(HttpUser):
     wait_time = between(1, 3)
-    host = "https://127.0.0.1:7019"  # Add your host here
+    host = "http://127.0.0.1:7019"  # Add your host here
     random.seed(time.time())
 
     @task(1)
@@ -20,6 +20,7 @@ class SimulateFlaskApp(HttpUser):
         random.seed(time.time())
         data = {"username": random.choice(USERNAMES)}
         start_time = time.time()
+        print(data)
         with self.client.post(
             "/otp",  # Endpoint relative to the host
             json=data,
@@ -59,7 +60,7 @@ class SimulateFlaskApp(HttpUser):
             catch_response=True
         ) as response:
             end_time = time.time()
-            if response.status_code == 201:
+            if response.status_code == 200:
                 response.success()
                 print(f"Register Request took {end_time - start_time:.2f} seconds")
             else:
