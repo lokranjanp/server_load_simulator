@@ -163,3 +163,4 @@ cython_debug/
 cert.pem
 key.pem
 userdump.csvw
+usernames.csv
