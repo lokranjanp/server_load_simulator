@@ -5,7 +5,7 @@ from threading import Lock
 import dotenv
 
 class SMTPConnectionPool:
-    def __init__(self, host, port, username, password, pool_size=40):
+    def __init__(self, host, port, username, password, pool_size=15):
         self.host = host
         self.port = port
         self.username = username
@@ -51,7 +51,7 @@ def initialize_pool():
     EMAIL_PASSWORD = dotenv.get_key(path, "EMAIL_PASSWORD")
     SMTP_SERVER = dotenv.get_key(path, "SMTP_SERVER")
     SMTP_PORT = int(dotenv.get_key(path, "SMTP_PORT"))
-    return SMTPConnectionPool(SMTP_SERVER, SMTP_PORT, EMAIL_ADDRESS, EMAIL_PASSWORD, pool_size=40)
+    return SMTPConnectionPool(SMTP_SERVER, SMTP_PORT, EMAIL_ADDRESS, EMAIL_PASSWORD, pool_size=15)
 
 
 def send_mail(recipient_email, otp, pool):
