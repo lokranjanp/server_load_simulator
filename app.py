@@ -23,7 +23,6 @@ pool = initialize_pool()
 @app.route("/otp", methods=['POST'])
 def serveotp():
     try:
-        # Extracting username from the JSON body
         data = request.json
         username = data.get('username')
         cursor = db["users"]
@@ -31,7 +30,6 @@ def serveotp():
         if not username:
             return jsonify({"error": "Username is required"}), 400
 
-        # Fetching user details from MongoDB
         user = cursor.find_one({"username": username})
 
         if not user:
@@ -42,10 +40,8 @@ def serveotp():
 
         # Generate OTP
         user_otp = pyotp.TOTP(user_otp_secret).now()
-        # Cache the OTP in Redis (assuming a function `cache_otp` is implemented)
         cache_otp(r, username, user_otp)
 
-        # Send the OTP via email (assuming a function `send_mail` is implemented)
         send_mail(user_email, user_otp, pool)
 
         return jsonify({"message": f"OTP sent to {user_email}"}), 200
@@ -102,7 +98,6 @@ def verify_password(stored_hash, provided_password):
 
 @app.route("/login", methods=['POST'])
 def login():
-    # Extracting login credentials
     data = request.json
     username = data.get('username')
     password = data.get('password')
@@ -111,7 +106,6 @@ def login():
         return jsonify({"error": "Username and password are required"}), 400
 
     cursor = db["users"]
-    # Fetching user details from MongoDB
     user = cursor.find_one({"username": username})
 
     if not user:
