@@ -40,7 +40,7 @@ def serveotp():
 
         # Generate OTP
         user_otp = pyotp.TOTP(user_otp_secret).now()
-        cache_otp(r, username, user_otp)
+        # cache_otp(r, username, user_otp)
 
         send_mail(user_email, user_otp, pool)
 
@@ -95,6 +95,10 @@ def register():
 
 def verify_password(stored_hash, provided_password):
     return bcrypt.checkpw(provided_password.encode('utf-8'), stored_hash)
+
+@app.route("/dummy", methods=['GET'])
+def test():
+    return jsonify({"message": "Server responding!"}), 200
 
 @app.route("/login", methods=['POST'])
 def login():

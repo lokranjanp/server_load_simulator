@@ -6,13 +6,13 @@ import random
 def load_usernames_from_csv(filepath):
     with open(filepath, "r") as file:
         reader = csv.DictReader(file)
-        return [row["username"] for row in reader]
+        return [row["Username"] for row in reader]
 
 USERNAMES = load_usernames_from_csv("usernames.csv")
 
 class SimulateFlaskApp(HttpUser):
     wait_time = between(1, 3)
-    host = "http://127.0.0.1:7019"  # Add your host here
+    host = "http://0.0.0.0:7019"  # Add your host here
     random.seed(time.time())
 
     @task(1)
