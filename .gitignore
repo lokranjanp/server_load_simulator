@@ -164,3 +164,4 @@ cert.pem
 key.pem
 userdump.csvw
 usernames.csv
+.DS_Store
