@@ -1,8 +1,10 @@
 import csv
 from pymongo import MongoClient
+import dotenv
 
 # Connect to MongoDB
-uri = "mongodb+srv://lokranjan03:loki2003@cluster0.klgxr.mongodb.net/authdata?retryWrites=true&w=majority"
+path = ".env"
+uri = dotenv.get_key(path, 'MONGO_URI')
 client = MongoClient(uri)
 db = client["authdata"]
 users_collection = db["users"]
