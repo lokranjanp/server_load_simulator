@@ -117,6 +117,8 @@ def login():
 
     if verify_password(user["password"], password):
         return jsonify({"message": "Login successful"}), 200
+    else:
+        return jsonify({"message": "Login Unsuccessful. Please check credentials"}), 401
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=7019)
