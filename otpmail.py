@@ -16,11 +16,12 @@ class SMTPConnectionPool:
 
         # Initialize the pool
         for _ in range(pool_size):
-            connection = self._create_connection()
+            connection = self.create_connection()
             self.pool.put(connection)
 
-    def _create_connection(self):
+    def create_connection(self):
         connection = smtplib.SMTP(self.host, self.port)
+        connection.set_debuglevel(1)
         connection.starttls()
         connection.login(self.username, self.password)
         return connection
@@ -51,7 +52,7 @@ def initialize_pool():
     EMAIL_PASSWORD = dotenv.get_key(path, "EMAIL_PASSWORD")
     SMTP_SERVER = dotenv.get_key(path, "SMTP_SERVER")
     SMTP_PORT = int(dotenv.get_key(path, "SMTP_PORT"))
-    return SMTPConnectionPool(SMTP_SERVER, SMTP_PORT, EMAIL_ADDRESS, EMAIL_PASSWORD, pool_size=10)
+    return SMTPConnectionPool(SMTP_SERVER, SMTP_PORT, EMAIL_ADDRESS, EMAIL_PASSWORD, pool_size=15)
 
 
 def send_mail(recipient_email, otp, pool):
