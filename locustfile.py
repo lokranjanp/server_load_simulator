@@ -16,7 +16,7 @@ USERNAMES = load_usernames_from_csv("usernames.csv")
 
 
 # File to store the metrics
-csv_file = "server_metrics_local.csv"
+csv_file = "server_metrics.csv"
 
 # Write headers to CSV
 with open(csv_file, mode="w", newline="") as file:

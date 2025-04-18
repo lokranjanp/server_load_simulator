@@ -1,5 +1,4 @@
 from datetime import datetime
-import dotenv
 from otp import *
 import pyotp
 import bcrypt
@@ -127,7 +126,6 @@ def login():
 def get_metrics():
     try:
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-
         cpu_percent = psutil.cpu_percent(interval=1)
         memory_percent = psutil.virtual_memory().percent
         disk_io = psutil.disk_io_counters().write_bytes
@@ -135,7 +133,6 @@ def get_metrics():
         net_io_sent = net_io.bytes_sent
         net_io_recv = net_io.bytes_recv
 
-        # Load Average
         try:
             load_avg = os.getloadavg()[0]
         except AttributeError:
@@ -157,9 +154,7 @@ def get_metrics():
             "load_avg": load_avg,
             "active_connections": active_connections
         }
-
         return jsonify(metrics), 200
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
