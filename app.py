@@ -10,6 +10,7 @@ from pymongo import MongoClient
 import redis
 import psutil
 import os
+from dotenv import load_dotenv
 
 path = ".env"
 app = Flask(__name__)
@@ -20,11 +21,6 @@ client = MongoClient(uri)
 db = client["authdata"]
 r = redis.StrictRedis(host='localhost', port=dotenv.get_key(path, 'REDIS_PORT'), db=7)
 pool = initialize_pool()
-
-server_id = os.getenv("SERVER_ID", "Unknown")
-port = int(os.getenv("PORT", 5000))  # default to 5000 if not set
-
-print(f"Starting Server ID: {server_id} on port {port}")
 
 @app.route("/otp", methods=['POST'])
 def serveotp():
@@ -129,12 +125,14 @@ def login():
 
 @app.route('/logs', methods=['GET'])
 def get_id():
+    path = ".env"
     try:
-        server_id = os.getenv("SERVER_ID", "Unknown")
+        server_id = int(dotenv.get_key(path, "SERVER_ID"))
         print(server_id)
         metrics = {
             "Server ID": server_id
         }
+        print(server_id)
         return jsonify(metrics), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
