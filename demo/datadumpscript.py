@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import dotenv
 
 # Connect to MongoDB
-path = ".env"
+path = "../.env"
 uri = dotenv.get_key(path, 'MONGO_URI')
 client = MongoClient(uri)
 db = client["authdata"]
