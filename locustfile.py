@@ -38,8 +38,7 @@ def log_metrics(response):
         load_avg = None
 
     data = response.json()
-    server_id = data.get("server_id")
-    print(server_id)
+    server_id = data.get("Server ID")
 
     try:
         with open(csv_file, mode="a", newline="") as file:
