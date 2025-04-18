@@ -1,12 +1,12 @@
 from datetime import datetime
 from otp import *
+from otpmail import *
 import pyotp
 import bcrypt
 import random
 import time
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
-from otpmail import *
 import redis
 import psutil
 import os
@@ -20,6 +20,11 @@ client = MongoClient(uri)
 db = client["authdata"]
 r = redis.StrictRedis(host='localhost', port=dotenv.get_key(path, 'REDIS_PORT'), db=7)
 pool = initialize_pool()
+
+server_id = os.getenv("SERVER_ID", "Unknown")
+port = int(os.getenv("PORT", 5000))  # default to 5000 if not set
+
+print(f"Starting Server ID: {server_id} on port {port}")
 
 @app.route("/otp", methods=['POST'])
 def serveotp():
@@ -123,40 +128,17 @@ def login():
 
 
 @app.route('/logs', methods=['GET'])
-def get_metrics():
+def get_id():
     try:
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-        cpu_percent = psutil.cpu_percent(interval=1)
-        memory_percent = psutil.virtual_memory().percent
-        disk_io = psutil.disk_io_counters().write_bytes
-        net_io = psutil.net_io_counters()
-        net_io_sent = net_io.bytes_sent
-        net_io_recv = net_io.bytes_recv
-
-        try:
-            load_avg = os.getloadavg()[0]
-        except AttributeError:
-            load_avg = None
-
-        # Active Connections
-        try:
-            active_connections = len(psutil.net_connections(kind='inet'))
-        except PermissionError:
-            active_connections = "Permission Denied"
-
+        server_id = os.getenv("SERVER_ID", "Unknown")
+        print(server_id)
         metrics = {
-            "timestamp": timestamp,
-            "cpu_percent": cpu_percent,
-            "memory_percent": memory_percent,
-            "disk_io": disk_io,
-            "net_io_sent": net_io_sent,
-            "net_io_recv": net_io_recv,
-            "load_avg": load_avg,
-            "active_connections": active_connections
+            "Server ID": server_id
         }
         return jsonify(metrics), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=7019)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)

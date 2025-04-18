@@ -12,32 +12,41 @@ def load_usernames_from_csv(filepath):
         reader = csv.DictReader(file)
         return [row["Username"] for row in reader]
 
-USERNAMES = load_usernames_from_csv("usernames.csv")
-
+USERNAMES = load_usernames_from_csv("demo/usernames.csv")
 
 # File to store the metrics
-csv_file = "server_metrics.csv"
+csv_file = "demo/server_metrics.csv"
 
 # Write headers to CSV
 with open(csv_file, mode="w", newline="") as file:
     writer = csv.writer(file)
-    writer.writerow(["timestamp", "cpu_percent", "memory_percent", "load_avg", "active_connections"])
+    writer.writerow(["timestamp", "cpu_percent", "memory_percent", "load_avg", "active_connections", "Server ID"])
 
-# Function to log metrics
-def log_metrics():
+
+def log_metrics(response):
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     cpu_percent = psutil.cpu_percent(interval=1)
     memory_percent = psutil.virtual_memory().percent
-    load_avg = os.getloadavg()[0]
-    active_connections = len(psutil.net_connections(kind='inet'))
+    try:
+        active_connections = len(psutil.net_connections(kind='inet'))
+    except PermissionError:
+        active_connections = "Permission Denied"
+
+    try:
+        load_avg = os.getloadavg()[0]
+    except AttributeError:
+        load_avg = None
+
+    data = response.json()
+    server_id = data.get("server_id")
+    print(server_id)
 
     try:
         with open(csv_file, mode="a", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow([timestamp, cpu_percent, memory_percent, load_avg, active_connections])
-        print(f"[{timestamp}] Logged metrics to {csv_file}")
+            writer.writerow([timestamp, cpu_percent, memory_percent, load_avg, active_connections, server_id])
     except Exception as e:
-        print(f"[Error] Failed to write to CSV: {e}")
+        print(f"[Error]Failed to write to CSV: {e}")
 
 
 class SimulateFlaskApp(HttpUser):
@@ -47,7 +56,6 @@ class SimulateFlaskApp(HttpUser):
 
     @task(1)
     def test_otpgen(self):
-        log_metrics()
         random.seed(time.time())
         data = {"username": random.choice(USERNAMES)}
         start_time = time.time()
@@ -66,7 +74,6 @@ class SimulateFlaskApp(HttpUser):
 
     @task(3)
     def test_login(self):
-        log_metrics()
         random.seed(time.time())
         self.username = random.choice(USERNAMES)
         data = {"username": self.username, "password":self.username}
@@ -84,9 +91,8 @@ class SimulateFlaskApp(HttpUser):
 
     @task(1)
     def test_register(self):
-        log_metrics()
         random.seed(time.time())
-        data = {"numrows": 1}
+        data = {"numrows": 5}
         start_time = time.time()
         with self.client.post(
             "/register", json=data,
@@ -98,3 +104,15 @@ class SimulateFlaskApp(HttpUser):
                 print(f"Register Request took {end_time - start_time:.2f} seconds")
             else:
                 response.failure(f"Failed with status code {response.status_code}: {response.text}")
+
+    @task()
+    def get_id_from_server(self):
+        with self.client.get(
+            "/logs", catch_response=True
+        ) as response:
+            if response.status_code == 200:
+                response.success()
+                log_metrics(response)
+            else:
+                response.failure(f"Failed with status code {response.status_code}: {response.text}")
+

@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  server1:
+    build: .
+    container_name: server1
+    privileged: true
+    environment:
+      - SERVER_ID=S1
+      - PORT=7019
+    ports:
+      - "7019:7019"
+
+  server2:
+    build: .
+    container_name: server2
+    privileged: true
+    environment:
+      - SERVER_ID=S2
+      - PORT=7020
+    ports:
+      - "7020:7020"
+
+  server3:
+    build: .
+    container_name: server3
+    privileged: true
+    environment:
+      - SERVER_ID=S3
+      - PORT=7021
+    ports:
+      - "7021:7021"
+
